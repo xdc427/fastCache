@@ -1,5 +1,6 @@
 package cn.xdc.simple;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -9,7 +10,7 @@ class FastList<T> {
     protected static final int DELETE_MAXNUM_ONETIME = 1000;
     private final long maxNum;
     private final long timeoutMs;
-    private long num;
+    private volatile long num;
     private final FastElem<T> head, tail;
 
     FastList(long maxNum, long timeoutMs) {
@@ -40,8 +41,8 @@ class FastList<T> {
             if(num > maxNum) {
                 FastElem<T> removed = tail.getPrev();
                 if(removed != head) {
-                    elem.getPrev().setNext(elem.getNext());
-                    elem.getNext().setPrev(elem.getPrev());
+                    removed.getPrev().setNext(removed.getNext());
+                    removed.getNext().setPrev(removed.getPrev());
                     num--;
                     return removed;
                 }
@@ -77,6 +78,19 @@ class FastList<T> {
     }
 
     protected boolean isTimeout(FastElem<T> elem){
-        return elem.getTimestamp() + timeoutMs <= System.currentTimeMillis();
+        return elem.isTimeout(timeoutMs);
+    }
+
+    protected long size(){
+        return num;
+    }
+
+    protected List<FastElem<T>> getAll(){
+        ArrayList<FastElem<T>> list = new ArrayList<>((int) num);
+
+        for( FastElem<T> elem = head.getNext(); elem != tail; elem = elem.getNext()){
+            list.add(elem);
+        }
+        return list;
     }
 }
